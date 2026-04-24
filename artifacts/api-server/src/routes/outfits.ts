@@ -115,6 +115,11 @@ Only choose ids that appear in the wardrobe. Never invent items.`;
   const userMessage = `Wardrobe:\n${JSON.stringify(wardrobe)}\n\nThe occasion / vibe: ${parsed.data.prompt}`;
 
   try {
+    if (!openai) {
+      res.status(503).json({ error: "AI features are not configured. Set OPENAI_API_KEY to enable outfit suggestions." });
+      return;
+    }
+
     const completion = await openai.chat.completions.create({
       model: "gpt-5.4",
       max_completion_tokens: 8192,
