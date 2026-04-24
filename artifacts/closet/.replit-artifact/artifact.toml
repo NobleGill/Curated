@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Digital Closet"
+version = "1.0.0"
+id = "artifacts/closet"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25617
+
+[services.development]
+run = "pnpm --filter @workspace/closet run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/closet", "run", "build" ]
+publicDir = "artifacts/closet/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25617"
+BASE_PATH = "/"

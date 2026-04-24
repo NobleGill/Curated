@@ -1,0 +1,415 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: Storage
+    description: Object storage upload and serving endpoints.
+  - name: Items
+    description: Closet clothing items
+  - name: Outfits
+    description: Saved and generated outfits
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadUrlRequest'
+      responses:
+        '200':
+          description: Presigned upload URL generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '400':
+          description: Invalid input.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Failed to generate upload URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /storage/public-objects/{filePath}:
+    get:
+      tags: [Storage]
+      operationId: getPublicObject
+      summary: Serve a public asset
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object content streamed.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /storage/objects/{objectPath}:
+    get:
+      tags: [Storage]
+      operationId: getStorageObject
+      summary: Serve a private object
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object content streamed.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /items:
+    get:
+      tags: [Items]
+      operationId: listItems
+      summary: List all clothing items
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Category'
+      responses:
+        '200':
+          description: List of clothing items.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClothingItem'
+    post:
+      tags: [Items]
+      operationId: createItem
+      summary: Create a new clothing item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemBody'
+      responses:
+        '200':
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClothingItem'
+  /items/{id}:
+    delete:
+      tags: [Items]
+      operationId: deleteItem
+      summary: Delete a clothing item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+
+  /outfits:
+    get:
+      tags: [Outfits]
+      operationId: listOutfits
+      summary: List saved outfits
+      responses:
+        '200':
+          description: List of saved outfits.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Outfit'
+    post:
+      tags: [Outfits]
+      operationId: saveOutfit
+      summary: Save an outfit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveOutfitBody'
+      responses:
+        '200':
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Outfit'
+  /outfits/random:
+    get:
+      tags: [Outfits]
+      operationId: generateRandomOutfit
+      summary: Generate a random outfit from the closet
+      responses:
+        '200':
+          description: A random outfit (one item per category, when available).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutfitPreview'
+  /outfits/suggest:
+    post:
+      tags: [Outfits]
+      operationId: suggestOutfit
+      summary: AI-powered outfit suggestion based on context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestOutfitBody'
+      responses:
+        '200':
+          description: An AI-suggested outfit with stylist commentary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestedOutfit'
+  /outfits/{id}:
+    delete:
+      tags: [Outfits]
+      operationId: deleteOutfit
+      summary: Delete a saved outfit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+
+  /summary:
+    get:
+      tags: [Items]
+      operationId: getClosetSummary
+      summary: Closet summary counts by category
+      responses:
+        '200':
+          description: Summary stats.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClosetSummary'
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+    OkResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        size:
+          type: integer
+          minimum: 1
+        contentType:
+          type: string
+          minLength: 1
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/UploadUrlRequest'
+    Category:
+      type: string
+      enum: [top, bottom, shoes, outerwear, accessory]
+    ClothingItem:
+      type: object
+      required: [id, name, category, imagePath, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category:
+          $ref: '#/components/schemas/Category'
+        color:
+          type: string
+          nullable: true
+        imagePath:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    CreateItemBody:
+      type: object
+      required: [name, category, imagePath]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        category:
+          $ref: '#/components/schemas/Category'
+        color:
+          type: string
+          nullable: true
+        imagePath:
+          type: string
+          minLength: 1
+    OutfitPreview:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClothingItem'
+    SuggestOutfitBody:
+      type: object
+      required: [prompt]
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+          maxLength: 500
+    SuggestedOutfit:
+      type: object
+      required: [items, reasoning, suggestedName]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClothingItem'
+        reasoning:
+          type: string
+        suggestedName:
+          type: string
+    SaveOutfitBody:
+      type: object
+      required: [name, itemIds]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        itemIds:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+    Outfit:
+      type: object
+      required: [id, name, items, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClothingItem'
+        createdAt:
+          type: string
+          format: date-time
+    ClosetSummary:
+      type: object
+      required: [totalItems, savedOutfits, byCategory]
+      properties:
+        totalItems:
+          type: integer
+        savedOutfits:
+          type: integer
+        byCategory:
+          type: array
+          items:
+            type: object
+            required: [category, count]
+            properties:
+              category:
+                $ref: '#/components/schemas/Category'
+              count:
+                type: integer
