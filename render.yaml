@@ -1,0 +1,52 @@
+# ============================================================================
+# render.yaml — Render Blueprint for Digital Closet
+# ============================================================================
+# Deploy with: https://render.com/deploy
+#
+# This blueprint provisions:
+#   1. A PostgreSQL database
+#   2. A single web service running both API + frontend
+#
+# Required environment variables you must set manually in the Render dashboard:
+#   - CLERK_SECRET_KEY         (your Clerk secret key)
+#   - VITE_CLERK_PUBLISHABLE_KEY  (set at build time for frontend)
+#   - OPENAI_API_KEY           (if using AI features)
+#
+# The DATABASE_URL is auto-provisioned by the linked PostgreSQL database.
+# ============================================================================
+
+databases:
+  - name: digital-closet-db
+    plan: free
+    databaseName: digital_closet
+    user: digital_closet_user
+
+services:
+  - type: web
+    name: digital-closet
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    # Render uses port 10000 by default for Docker services
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: digital-closet-db
+          property: connectionString
+      # --- Set these in the Render dashboard under Environment ---
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: VITE_CLERK_PUBLISHABLE_KEY
+        sync: false
+      # Optional: uncomment if you use OpenAI features
+      # - key: OPENAI_API_KEY
+      #   sync: false
+      # Optional: uncomment if you use Google Cloud Storage
+      # - key: PUBLIC_OBJECT_SEARCH_PATHS
+      #   sync: false
+      # - key: PRIVATE_OBJECT_DIR
+      #   sync: false

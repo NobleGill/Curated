@@ -1,0 +1,39 @@
+# Dependencies (will be installed fresh inside the container)
+node_modules
+**/node_modules
+
+# Build outputs
+dist
+**/dist
+
+# Git
+.git
+.gitignore
+
+# Replit
+.replit
+.replitignore
+.replit-artifact
+**/.replit-artifact
+.cache
+.local
+
+# IDE
+.vscode
+.idea
+.cursor
+
+# Environment files (secrets are set via Render dashboard)
+.env
+.env.*
+*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Misc
+*.tsbuildinfo
+*.tar.gz
+README.md
+replit.md

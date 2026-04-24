@@ -1,4 +1,6 @@
 import express, { type Express } from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
@@ -37,5 +39,18 @@ app.use(express.urlencoded({ extended: true }));
 app.use(clerkMiddleware());
 
 app.use("/api", router);
+
+// --- Production: serve the built frontend static files ---
+if (process.env.NODE_ENV === "production") {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const clientDistPath = path.resolve(__dirname, "..", "..", "closet", "dist", "public");
+
+  app.use(express.static(clientDistPath));
+
+  // SPA fallback: serve index.html for any non-API route
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(clientDistPath, "index.html"));
+  });
+}
 
 export default app;
