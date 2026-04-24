@@ -43,6 +43,10 @@ COPY --from=deps /app ./
 # Copy all source code
 COPY . .
 
+# Build-time env vars needed by Vite (baked into the frontend bundle)
+ARG VITE_CLERK_PUBLISHABLE_KEY
+ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
+
 # Build the frontend (Vite) — outputs to artifacts/closet/dist/public
 RUN pnpm --filter @workspace/closet run build
 
